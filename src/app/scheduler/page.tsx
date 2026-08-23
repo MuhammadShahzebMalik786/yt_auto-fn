@@ -37,7 +37,11 @@ export default function SchedulerSettings() {
     fetchConfig();
   }, [activeWorkspaceId]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  // Includes HTMLTextAreaElement: the Default Tags field is a <textarea>, and omitting it
+  // made `next build` fail type checking (which would break the Vercel deployment).
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value, type } = e.target as any;
     setConfig(prev => ({
       ...prev,
