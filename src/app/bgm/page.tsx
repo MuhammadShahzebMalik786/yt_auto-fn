@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { API, withToken } from "@/lib/api";
 
 export default function BGMLibrary() {
   const [moods, setMoods] = useState<any[]>([]);
@@ -12,7 +13,7 @@ export default function BGMLibrary() {
 
   const fetchMoods = async () => {
     try {
-      const res = await fetch("http://localhost:8000/bgm/moods");
+      const res = await fetch(`${API}/bgm/moods`);
       const data = await res.json();
       setMoods(data.moods);
     } catch (err) {
@@ -43,7 +44,7 @@ export default function BGMLibrary() {
 
     setUploading(true);
     try {
-      const res = await fetch("http://localhost:8000/bgm/upload", {
+      const res = await fetch(`${API}/bgm/upload`, {
         method: "POST",
         body: formData,
       });
@@ -168,7 +169,7 @@ export default function BGMLibrary() {
                           <span className="truncate">{track}</span>
                         </div>
                         <audio controls controlsList="nodownload" className="w-full h-8 mt-1 opacity-70 group-hover:opacity-100 transition-opacity">
-                          <source src={`http://localhost:8000/static/assets/bgm/${moodData.mood}/${track}`} type="audio/mpeg" />
+                          <source src={withToken(`${API}/static/assets/bgm/${moodData.mood}/${track}`)} type="audio/mpeg" />
                         </audio>
                       </li>
                     ))}

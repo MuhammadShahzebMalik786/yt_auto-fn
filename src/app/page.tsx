@@ -1,5 +1,6 @@
 "use client";
 
+import { API } from "@/lib/api";
 import { useState, useEffect } from "react";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import ThumbnailPreview from "@/components/ThumbnailPreview";
@@ -16,7 +17,7 @@ export default function Home() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/topics?workspace_id=${activeWorkspaceId}`);
+        const res = await fetch(`${API}/topics?workspace_id=${activeWorkspaceId}`);
         const data = await res.json();
         
         let pending = 0;

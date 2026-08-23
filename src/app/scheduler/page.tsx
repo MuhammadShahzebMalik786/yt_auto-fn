@@ -1,5 +1,6 @@
 "use client";
 
+import { API } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { useWorkspace } from "@/components/WorkspaceContext";
 
@@ -22,7 +23,7 @@ export default function SchedulerSettings() {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/upload_config?workspace_id=${activeWorkspaceId}`);
+        const res = await fetch(`${API}/upload_config?workspace_id=${activeWorkspaceId}`);
         if (res.ok) {
           const data = await res.json();
           setConfig(data);
@@ -48,7 +49,7 @@ export default function SchedulerSettings() {
     setSaving(true);
     setSaveMessage("");
     try {
-      const res = await fetch(`http://localhost:8000/upload_config?workspace_id=${activeWorkspaceId}`, {
+      const res = await fetch(`${API}/upload_config?workspace_id=${activeWorkspaceId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config)

@@ -1,5 +1,6 @@
 "use client";
 
+import { API } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { useWorkspace } from "@/components/WorkspaceContext";
 
@@ -15,7 +16,7 @@ export default function Topics() {
 
   const fetchTopics = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/topics?workspace_id=${activeWorkspaceId}&video_type=documentary`);
+      const res = await fetch(`${API}/topics?workspace_id=${activeWorkspaceId}&video_type=documentary`);
       const data = await res.json();
       setTopics(data.filter((t: any) => t.status === "pending"));
     } catch (err) {
@@ -30,7 +31,7 @@ export default function Topics() {
   const handleDiscover = async () => {
     setDiscovering(true);
     try {
-      await fetch(`http://localhost:8000/topics/discover?workspace_id=${activeWorkspaceId}`, { method: "POST" });
+      await fetch(`${API}/topics/discover?workspace_id=${activeWorkspaceId}`, { method: "POST" });
       await fetchTopics();
     } catch (err) {
       console.error("Failed to discover topics", err);
@@ -40,7 +41,7 @@ export default function Topics() {
 
   const handleApprove = async (id: number) => {
     try {
-      await fetch(`http://localhost:8000/topics/${id}/approve`, { method: "POST" });
+      await fetch(`${API}/topics/${id}/approve`, { method: "POST" });
       await fetchTopics();
     } catch (err) {
       console.error(err);
@@ -49,7 +50,7 @@ export default function Topics() {
 
   const handleReject = async (id: number) => {
     try {
-      await fetch(`http://localhost:8000/topics/${id}/reject`, { method: "POST" });
+      await fetch(`${API}/topics/${id}/reject`, { method: "POST" });
       await fetchTopics();
     } catch (err) {
       console.error(err);
@@ -58,7 +59,7 @@ export default function Topics() {
 
   const handleManualAdd = async () => {
     try {
-      await fetch(`http://localhost:8000/topics?workspace_id=${activeWorkspaceId}`, {
+      await fetch(`${API}/topics?workspace_id=${activeWorkspaceId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

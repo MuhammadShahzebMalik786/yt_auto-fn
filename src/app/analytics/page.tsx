@@ -1,5 +1,6 @@
 "use client";
 
+import { API } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { useWorkspace } from "@/components/WorkspaceContext";
 import {
@@ -28,7 +29,7 @@ export default function Analytics() {
       setError("");
       try {
         // Fetch High-level stats
-        const resStats = await fetch(`http://localhost:8000/analytics?workspace_id=${activeWorkspaceId}`);
+        const resStats = await fetch(`${API}/analytics?workspace_id=${activeWorkspaceId}`);
         const statsData = await resStats.json();
         
         if (statsData.error) {
@@ -40,7 +41,7 @@ export default function Analytics() {
         setChannelStats(statsData);
 
         // Fetch 30-day report
-        const resReport = await fetch(`http://localhost:8000/analytics/reports?workspace_id=${activeWorkspaceId}`);
+        const resReport = await fetch(`${API}/analytics/reports?workspace_id=${activeWorkspaceId}`);
         const reportRaw = await resReport.json();
         
         if (reportRaw.rows) {

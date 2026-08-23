@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { API, withToken } from "@/lib/api";
 
 interface ThumbnailPreviewProps {
   topicId: number;
@@ -15,7 +16,8 @@ export default function ThumbnailPreview({ topicId, slug, className = "" }: Thum
   // Construct URL based on backend static route convention
   // e.g. static/projects/1_the_death_of_the_9_to_5/thumbnail.jpg
   const sanitizedSlug = slug.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
-  const thumbUrl = `http://localhost:8000/static/projects/${topicId}_${sanitizedSlug}/thumbnail.jpg`;
+  // <img> cannot send auth headers, so the session token rides in the query string.
+  const thumbUrl = withToken(`${API}/static/projects/${topicId}_${sanitizedSlug}/thumbnail.jpg`);
 
   if (error) {
     return (

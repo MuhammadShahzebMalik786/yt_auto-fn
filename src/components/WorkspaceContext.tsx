@@ -1,5 +1,6 @@
 "use client";
 
+import { API } from "@/lib/api";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 type Workspace = {
@@ -23,7 +24,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   const fetchWorkspaces = async () => {
     try {
-      const res = await fetch('http://localhost:8000/workspaces');
+      const res = await fetch(`${API}/workspaces`);
       if (res.ok) {
         const data = await res.json();
         setWorkspaces(data);
@@ -50,7 +51,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   const createWorkspace = async (name: string) => {
     try {
-      const res = await fetch('http://localhost:8000/workspaces', {
+      const res = await fetch(`${API}/workspaces`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name })

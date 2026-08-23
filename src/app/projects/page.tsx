@@ -1,5 +1,6 @@
 "use client";
 
+import { API } from "@/lib/api";
 import { useState, useEffect } from "react";
 import ThumbnailPreview from "@/components/ThumbnailPreview";
 import ProgressBar from "@/components/ProgressBar";
@@ -16,7 +17,7 @@ export default function Projects() {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/topics?workspace_id=${activeWorkspaceId}`);
+        const res = await fetch(`${API}/topics?workspace_id=${activeWorkspaceId}`);
         const data = await res.json();
         setProjects(data.filter((t: any) => t.status === "generating" || t.status === "completed" || t.status === "failed").reverse());
         setLoading(false);
@@ -87,7 +88,7 @@ export default function Projects() {
                   onClick={async () => {
                     if (window.confirm("Are you sure you want to permanently delete this project and its files?")) {
                       try {
-                        await fetch(`http://localhost:8000/topics/${project.id}`, { method: "DELETE" });
+                        await fetch(`${API}/topics/${project.id}`, { method: "DELETE" });
                         setProjects(prev => prev.filter(p => p.id !== project.id));
                       } catch (err) {
                         console.error(err);
@@ -154,7 +155,7 @@ export default function Projects() {
                       <div className="flex gap-2">
                         <button 
                           onClick={async () => {
-                            await fetch(`http://localhost:8000/topics/${project.id}/approve_review`, { method: "POST" });
+                            await fetch(`${API}/topics/${project.id}/approve_review`, { method: "POST" });
                             setProjects(prev => prev.map(p => p.id === project.id ? {...p, status: "generating"} : p));
                           }}
                           className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg text-sm font-bold transition-colors"
@@ -165,7 +166,7 @@ export default function Projects() {
                           onClick={async () => {
                             const action = prompt("Reject Options: 'stop', 'retry_director', or 'retry_thumbnail'\nType your choice:");
                             if (action && ["stop", "retry_director", "retry_thumbnail"].includes(action)) {
-                              await fetch(`http://localhost:8000/topics/${project.id}/reject_review`, { 
+                              await fetch(`${API}/topics/${project.id}/reject_review`, { 
                                 method: "POST", 
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ action }) 
@@ -190,7 +191,7 @@ export default function Projects() {
                         <button 
                           onClick={async () => {
                             try {
-                              await fetch(`http://localhost:8000/topics/${project.id}/approve`, {
+                              await fetch(`${API}/topics/${project.id}/approve`, {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ id: project.id, title: project.title, score: project.score })
@@ -206,7 +207,7 @@ export default function Projects() {
                         <button 
                           onClick={async () => {
                             try {
-                              await fetch(`http://localhost:8000/topics/${project.id}/thumbnail`, { method: "POST" });
+                              await fetch(`${API}/topics/${project.id}/thumbnail`, { method: "POST" });
                             } catch (err) {
                               console.error(err);
                             }
@@ -234,7 +235,7 @@ export default function Projects() {
                         <button 
                           onClick={async () => {
                             try {
-                              await fetch(`http://localhost:8000/topics/${project.id}/thumbnail`, { method: "POST" });
+                              await fetch(`${API}/topics/${project.id}/thumbnail`, { method: "POST" });
                             } catch (err) {
                               console.error(err);
                             }

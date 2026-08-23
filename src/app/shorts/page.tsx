@@ -1,5 +1,6 @@
 "use client";
 
+import { API } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { useWorkspace } from "@/components/WorkspaceContext";
 
@@ -14,7 +15,7 @@ export default function Shorts() {
 
   const fetchShorts = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/topics?workspace_id=${activeWorkspaceId}&video_type=short`);
+      const res = await fetch(`${API}/topics?workspace_id=${activeWorkspaceId}&video_type=short`);
       const data = await res.json();
       setShorts(data);
     } catch (err) {
@@ -31,7 +32,7 @@ export default function Shorts() {
 
   const handleManualAdd = async () => {
     try {
-      await fetch(`http://localhost:8000/topics?workspace_id=${activeWorkspaceId}`, {
+      await fetch(`${API}/topics?workspace_id=${activeWorkspaceId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

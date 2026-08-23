@@ -12,8 +12,8 @@ export const metadata: Metadata = {
   description: "Intelligent YouTube channel automation and management platform",
 };
 
-import Sidebar from "@/components/Sidebar";
-import { WorkspaceProvider } from "@/components/WorkspaceContext";
+import AuthGuard from "@/components/AuthGuard";
+import AppShell from "@/components/AppShell";
 
 export default function RootLayout({
   children,
@@ -27,15 +27,11 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex text-gray-200" suppressHydrationWarning>
-        <WorkspaceProvider>
-          <Sidebar />
-          <main className="ml-64 flex-1 min-h-screen relative overflow-x-hidden">
-            {/* Global page transition wrapper */}
-            <div className="animate-fade-in-up w-full h-full">
-              {children}
-            </div>
-          </main>
-        </WorkspaceProvider>
+        {/* AuthGuard installs the fetch interceptor and blocks rendering until a
+            session token exists, so no page can fire an unauthenticated request. */}
+        <AuthGuard>
+          <AppShell>{children}</AppShell>
+        </AuthGuard>
       </body>
     </html>
   );
