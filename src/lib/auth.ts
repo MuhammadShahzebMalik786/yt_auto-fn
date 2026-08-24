@@ -34,24 +34,41 @@ export function clearDoorToken(): void {
   window.localStorage.removeItem(DOOR_KEY);
 }
 
+// Refresh tokens rotate on every use: the backend treats a second presentation of an
+// already-rotated token as theft and revokes the whole session. React 19's dev-mode
+// Strict Mode double-invokes effects, so two call sites (or one effect, invoked twice)
+// can legitimately call this within the same tick, both racing on the same cookie -- the
+// first rotates it, the second then looks like a replay and kills the session it just
+// created. Sharing one in-flight request across concurrent callers means only one actual
+// POST /auth/refresh is ever sent, so the race never happens.
+let refreshInFlight: Promise<string | null> | null = null;
+
 /** Exchange the refresh cookie for a new access token. Returns null when signed out. */
 export async function refreshAccessToken(): Promise<string | null> {
-  try {
-    const res = await fetch(`${API}/auth/refresh`, {
-      method: "POST",
-      credentials: "include", // the refresh token is a cross-site cookie
-    });
-    if (!res.ok) {
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = (async () => {
+    try {
+      const res = await fetch(`${API}/auth/refresh`, {
+        method: "POST",
+        credentials: "include", // the refresh token is a cross-site cookie
+      });
+      if (!res.ok) {
+        accessToken = null;
+        return null;
+      }
+      const data = await res.json();
+      accessToken = data.access_token;
+      return accessToken;
+    } catch {
       accessToken = null;
       return null;
+    } finally {
+      refreshInFlight = null;
     }
-    const data = await res.json();
-    accessToken = data.access_token;
-    return accessToken;
-  } catch {
-    accessToken = null;
-    return null;
-  }
+  })();
+
+  return refreshInFlight;
 }
 
 export async function fetchMe() {
