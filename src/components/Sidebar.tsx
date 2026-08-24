@@ -1,11 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useWorkspace } from './WorkspaceContext';
+import { fetchMe, signOut } from '@/lib/auth';
+
+type Me = { email: string; name?: string; picture?: string; tier?: string };
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [me, setMe] = useState<Me | null>(null);
+
+  useEffect(() => {
+    fetchMe().then(setMe);
+  }, []);
   const { workspaces, activeWorkspaceId, setActiveWorkspaceId, createWorkspace } = useWorkspace();
   
   const handleWorkspaceChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -56,7 +65,31 @@ export default function Sidebar() {
       </nav>
 
       <div className="mt-auto">
+        <SidebarLink href="/profiles" label="Profiles" icon="queue" active={pathname === "/profiles"} />
+        <SidebarLink href="/pricing" label="Plans" icon="analytics" active={pathname === "/pricing"} />
         <SidebarLink href="/settings" label="Settings" icon="settings" active={pathname === "/settings"} />
+
+        {me && (
+          <div className="mt-3 pt-3 border-t border-white/10">
+            <div className="flex items-center gap-2 px-2 mb-2">
+              {me.picture ? (
+                <img src={me.picture} alt="" className="w-7 h-7 rounded-full" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-600 to-blue-500" />
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-gray-300 truncate">{me.name || me.email}</p>
+                <p className="text-[10px] text-gray-600 capitalize">{me.tier || 'free'} plan</p>
+              </div>
+            </div>
+            <button
+              onClick={signOut}
+              className="w-full text-left text-xs text-gray-500 hover:text-red-400 px-2 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors"
+            >
+              Sign out
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -2,21 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { API, getToken, clearToken } from "@/lib/api";
+import { API } from "@/lib/api";
+import { getAccessToken, getDoorToken, refreshAccessToken } from "@/lib/auth";
 
 /**
- * Gates the whole app behind the backend password.
+ * Gates the app behind the backend session.
  *
- * Rather than editing every one of the 36 fetch() call sites, this patches window.fetch
- * once: any request aimed at the backend gets the session token attached, and any 401
- * response bounces the user to /login. New pages are covered automatically.
+ * Rather than editing every fetch() call site, this patches window.fetch once: requests
+ * aimed at the backend get the current token and credentials, and a 401 triggers a single
+ * silent refresh-and-retry (the access token only lives 15 minutes, so expiry during
+ * normal use is routine, not an error the user should see).
  */
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [ready, setReady] = useState(false);
 
-  // Install the fetch interceptor once, before anything renders.
   useEffect(() => {
     const w = window as unknown as { __atlasFetchPatched?: boolean };
     if (w.__atlasFetchPatched) return;
@@ -26,23 +27,28 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const url =
-        typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
 
-      // Only touch calls to our own backend; leave third-party requests alone.
-      if (url.startsWith(API)) {
-        const token = getToken();
-        if (token) {
-          const headers = new Headers(init?.headers || (input as Request).headers || {});
-          headers.set("X-App-Token", token);
-          init = { ...init, headers };
-        }
-      }
+      const decorate = (opts: RequestInit | undefined): RequestInit => {
+        if (!url.startsWith(API)) return opts || {};
+        const headers = new Headers(opts?.headers || {});
+        const token = getAccessToken() || getDoorToken();
+        if (token) headers.set("X-App-Token", token);
+        return { ...opts, headers, credentials: "include" };
+      };
 
-      const response = await original(input as RequestInfo, init);
+      let response = await original(input as RequestInfo, decorate(init));
 
-      if (response.status === 401 && url.startsWith(API)) {
-        clearToken();
-        if (!window.location.pathname.startsWith("/login")) {
+      const isAuthCall = url.includes("/auth/refresh") || url.includes("/session/login");
+      if (response.status === 401 && url.startsWith(API) && !isAuthCall) {
+        const renewed = await refreshAccessToken();
+        if (renewed) {
+          response = await original(input as RequestInfo, decorate(init));
+        } else if (!window.location.pathname.startsWith("/login")) {
           window.location.href = "/login";
         }
       }
@@ -50,17 +56,28 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Redirect to /login when there is no token.
   useEffect(() => {
-    if (pathname?.startsWith("/login")) {
+    let cancelled = false;
+
+    (async () => {
+      if (pathname?.startsWith("/login")) {
+        if (!cancelled) setReady(true);
+        return;
+      }
+      // The access token is in memory, so a reload starts with none: try the refresh
+      // cookie before deciding the user is signed out.
+      const token = getAccessToken() || (await refreshAccessToken());
+      if (cancelled) return;
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
       setReady(true);
-      return;
-    }
-    if (!getToken()) {
-      router.replace("/login");
-      return;
-    }
-    setReady(true);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [pathname, router]);
 
   if (!ready) {
