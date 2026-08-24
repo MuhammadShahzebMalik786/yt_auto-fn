@@ -3,6 +3,7 @@
 import { API } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { useWorkspace } from "@/components/WorkspaceContext";
+import NoProfile from "@/components/NoProfile";
 import {
   AreaChart,
   Area,
@@ -17,33 +18,44 @@ import {
 } from "recharts";
 
 export default function Analytics() {
-  const { activeWorkspaceId } = useWorkspace();
+  const { activeWorkspaceId, workspacesLoaded } = useWorkspace();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [channelStats, setChannelStats] = useState<any>(null);
   const [reportData, setReportData] = useState<any[]>([]);
 
   useEffect(() => {
+    if (activeWorkspaceId === 0) return;
+
     const fetchAnalytics = async () => {
       setLoading(true);
       setError("");
       try {
         // Fetch High-level stats
         const resStats = await fetch(`${API}/analytics?workspace_id=${activeWorkspaceId}`);
+        if (!resStats.ok) {
+          setError("Failed to load analytics data.");
+          setLoading(false);
+          return;
+        }
         const statsData = await resStats.json();
-        
+
         if (statsData.error) {
           setError(statsData.error);
           setLoading(false);
           return;
         }
-        
+
         setChannelStats(statsData);
 
         // Fetch 30-day report
         const resReport = await fetch(`${API}/analytics/reports?workspace_id=${activeWorkspaceId}`);
+        if (!resReport.ok) {
+          setLoading(false);
+          return;
+        }
         const reportRaw = await resReport.json();
-        
+
         if (reportRaw.rows) {
           // Format for Recharts
           const formattedData = reportRaw.rows.map((row: any[]) => {
@@ -67,6 +79,10 @@ export default function Analytics() {
 
     fetchAnalytics();
   }, [activeWorkspaceId]);
+
+  if (workspacesLoaded && activeWorkspaceId === 0) {
+    return <NoProfile />;
+  }
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {

@@ -7,18 +7,23 @@ import ProgressBar from "@/components/ProgressBar";
 import { getPipelineProgress } from "@/lib/pipelineProgress";
 import SkeletonCard from "@/components/SkeletonCard";
 import { useWorkspace } from "@/components/WorkspaceContext";
+import NoProfile from "@/components/NoProfile";
 
 export default function Projects() {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
-  const { activeWorkspaceId } = useWorkspace();
+  const { activeWorkspaceId, workspacesLoaded } = useWorkspace();
 
   useEffect(() => {
+    if (activeWorkspaceId === 0) return;
+
     const fetchProjects = async () => {
       try {
         const res = await fetch(`${API}/topics?workspace_id=${activeWorkspaceId}`);
+        if (!res.ok) return;
         const data = await res.json();
+        if (!Array.isArray(data)) return;
         setProjects(data.filter((t: any) => t.status === "generating" || t.status === "completed" || t.status === "failed").reverse());
         setLoading(false);
       } catch (err) {
@@ -30,6 +35,10 @@ export default function Projects() {
     const interval = setInterval(fetchProjects, 3000);
     return () => clearInterval(interval);
   }, [activeWorkspaceId]);
+
+  if (workspacesLoaded && activeWorkspaceId === 0) {
+    return <NoProfile />;
+  }
 
   return (
     <div className="p-10 max-w-7xl mx-auto">

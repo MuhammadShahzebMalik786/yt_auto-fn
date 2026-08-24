@@ -3,21 +3,25 @@
 import { API } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { useWorkspace } from "@/components/WorkspaceContext";
+import NoProfile from "@/components/NoProfile";
 
 export default function Topics() {
   const [discovering, setDiscovering] = useState(false);
   const [topics, setTopics] = useState<any[]>([]);
-  
+
   // State for manual topic addition
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
-  const { activeWorkspaceId } = useWorkspace();
+  const { activeWorkspaceId, workspacesLoaded } = useWorkspace();
 
   const fetchTopics = async () => {
+    if (activeWorkspaceId === 0) return;
     try {
       const res = await fetch(`${API}/topics?workspace_id=${activeWorkspaceId}&video_type=documentary`);
+      if (!res.ok) return;
       const data = await res.json();
+      if (!Array.isArray(data)) return;
       setTopics(data.filter((t: any) => t.status === "pending"));
     } catch (err) {
       console.error("Failed to fetch topics", err);
@@ -27,6 +31,10 @@ export default function Topics() {
   useEffect(() => {
     fetchTopics();
   }, [activeWorkspaceId]);
+
+  if (workspacesLoaded && activeWorkspaceId === 0) {
+    return <NoProfile />;
+  }
 
   const handleDiscover = async () => {
     setDiscovering(true);

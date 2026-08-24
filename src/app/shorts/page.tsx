@@ -3,20 +3,24 @@
 import { API } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { useWorkspace } from "@/components/WorkspaceContext";
+import NoProfile from "@/components/NoProfile";
 
 export default function Shorts() {
   const [shorts, setShorts] = useState<any[]>([]);
-  
+
   // State for manual topic addition
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
-  const { activeWorkspaceId } = useWorkspace();
+  const { activeWorkspaceId, workspacesLoaded } = useWorkspace();
 
   const fetchShorts = async () => {
+    if (activeWorkspaceId === 0) return;
     try {
       const res = await fetch(`${API}/topics?workspace_id=${activeWorkspaceId}&video_type=short`);
+      if (!res.ok) return;
       const data = await res.json();
+      if (!Array.isArray(data)) return;
       setShorts(data);
     } catch (err) {
       console.error("Failed to fetch shorts", err);
@@ -29,6 +33,10 @@ export default function Shorts() {
     const interval = setInterval(fetchShorts, 10000);
     return () => clearInterval(interval);
   }, [activeWorkspaceId]);
+
+  if (workspacesLoaded && activeWorkspaceId === 0) {
+    return <NoProfile />;
+  }
 
   const handleManualAdd = async () => {
     try {

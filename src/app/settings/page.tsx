@@ -3,6 +3,7 @@
 import { API } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { useWorkspace } from "@/components/WorkspaceContext";
+import NoProfile from "@/components/NoProfile";
 
 export default function Settings() {
   const [model, setModel] = useState("gemini-1.5-pro");
@@ -26,9 +27,11 @@ export default function Settings() {
   const [ttsVoices, setTtsVoices] = useState<{id: string, label: string, gender: string, locale: string}[]>([]);
   const [previewing, setPreviewing] = useState(false);
   const [bgmLevel, setBgmLevel] = useState("0.12");
-  const { activeWorkspaceId } = useWorkspace();
+  const { activeWorkspaceId, workspacesLoaded } = useWorkspace();
 
   useEffect(() => {
+    if (activeWorkspaceId === 0) return;
+
     // Fetch settings from API
     fetch(`${API}/settings?workspace_id=${activeWorkspaceId}`)
       .then(res => res.json())
@@ -164,6 +167,10 @@ export default function Settings() {
       console.error("Failed to disconnect:", err);
     }
   };
+
+  if (workspacesLoaded && activeWorkspaceId === 0) {
+    return <NoProfile />;
+  }
 
   return (
     <div className="p-10 max-w-4xl mx-auto">

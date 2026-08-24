@@ -3,6 +3,7 @@
 import { API } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { useWorkspace } from "@/components/WorkspaceContext";
+import NoProfile from "@/components/NoProfile";
 
 export default function SchedulerSettings() {
   const [config, setConfig] = useState({
@@ -18,9 +19,13 @@ export default function SchedulerSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
-  const { activeWorkspaceId } = useWorkspace();
+  const { activeWorkspaceId, workspacesLoaded } = useWorkspace();
 
   useEffect(() => {
+    if (activeWorkspaceId === 0) {
+      setLoading(false);
+      return;
+    }
     const fetchConfig = async () => {
       try {
         const res = await fetch(`${API}/upload_config?workspace_id=${activeWorkspaceId}`);
@@ -79,6 +84,10 @@ export default function SchedulerSettings() {
         <div className="h-64 bg-gray-800 rounded skeleton-shimmer"></div>
       </div>
     );
+  }
+
+  if (workspacesLoaded && activeWorkspaceId === 0) {
+    return <NoProfile />;
   }
 
   return (

@@ -7,29 +7,36 @@ import ThumbnailPreview from "@/components/ThumbnailPreview";
 import ProgressBar from "@/components/ProgressBar";
 import { getPipelineProgress } from "@/lib/pipelineProgress";
 import { useWorkspace } from "@/components/WorkspaceContext";
+import NoProfile from "@/components/NoProfile";
 
 export default function Home() {
   const [stats, setStats] = useState({ pending: 0, generating: 0, completed: 0 });
   const [recentProjects, setRecentProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { activeWorkspaceId } = useWorkspace();
+  const { activeWorkspaceId, workspacesLoaded } = useWorkspace();
 
   useEffect(() => {
+    // 0 means either "still resolving" or "this user owns no profile" -- either way
+    // there is nothing to fetch, and workspace_id=0 would just 404/403.
+    if (activeWorkspaceId === 0) return;
+
     const fetchStats = async () => {
       try {
         const res = await fetch(`${API}/topics?workspace_id=${activeWorkspaceId}`);
+        if (!res.ok) return; // e.g. a token mid-refresh; the next poll retries
         const data = await res.json();
-        
+        if (!Array.isArray(data)) return;
+
         let pending = 0;
         let generating = 0;
         let completed = 0;
-        
+
         data.forEach((t: any) => {
           if (t.status === "pending") pending++;
           if (t.status === "generating") generating++;
           if (t.status === "completed") completed++;
         });
-        
+
         setStats({ pending, generating, completed });
         setRecentProjects(data.filter((t: any) => t.status === "generating" || t.status === "completed").reverse().slice(0, 4));
         setLoading(false);
@@ -42,6 +49,10 @@ export default function Home() {
     const interval = setInterval(fetchStats, 5000);
     return () => clearInterval(interval);
   }, [activeWorkspaceId]);
+
+  if (workspacesLoaded && activeWorkspaceId === 0) {
+    return <NoProfile />;
+  }
 
   return (
     <div className="p-10 max-w-6xl mx-auto">
